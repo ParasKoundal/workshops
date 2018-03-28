@@ -36,6 +36,7 @@ You will learn how to :
 * organize your data vectors into data frames
 * perform basic math and statistics in R
 * import data from a file or on the web into an R data frame
+* get help with functions within RStudio
 
 We recommend this workshop be given across a single 2 hour session.
 
