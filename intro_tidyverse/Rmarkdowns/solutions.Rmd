@@ -2,9 +2,19 @@
 title: "tidyverse exercise solutions"
 author: "Kris Hong & Kim Dill-McFarland"
 date: "version `r format(Sys.time(), '%B %d, %Y')`"
-output: html_document
-editor_options: 
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float:
+      collapsed: no
+mainfont: Arial
+fontsize: 11 pt
+editor_options:
   chunk_output_type: console
+urlcolor: blue
 ---
 ```{r echo=FALSE}
 setwd("~/GitHub/workshops/intro_tidyverse/")
