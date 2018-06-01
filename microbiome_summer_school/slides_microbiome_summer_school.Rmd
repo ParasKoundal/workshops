@@ -1,0 +1,46 @@
+---
+title: "Microbiome data manipulation and visualization in R"
+subtitle: "Introduction"
+editor_options:
+  chunk_output_type: console
+author: Kim Dill-McFarland
+date: "version `r format(Sys.time(), '%B %d, %Y')`"
+output: ioslides_presentation
+---
+
+## Workshop outline
+
+* Introduction to R on a cluster
+
+* Microbiome data manipulation in RStudio using the [tidyverse](https://www.tidyverse.org/)
+
+* Microbiome data visualization in RStudio using [phyloseq](https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html)
+
+* All data and materials are available at
+
+## Why R/RStudio?
+
+* Open source
+* Command line and GUI options
+* Reproducible research and version control (Rmarkdown, Rnotebook, etc.)
+* Huge community of developers around the world
+* Custom packages, many of which are applicable to microbiome data analysis
+    + 28+ [CRAN](https://cran.r-project.org/web/packages/available_packages_by_name.html) package titles contain the word "DNA"
+    + Dozens more on [Bioconductor](https://www.bioconductor.org/)
+
+## phyloseq
+
+* Import data processed in other software (QIIME, mothur, RDP)
+* Alpha- and beta-diversity
+    + Calculation
+    + Visualization
+    + Multiple testing methods specific to high-throughput amplicon sequencing data
+* Native R/C, parallelized implementation of UniFrac
+* Integration with the tidyverse
+
+## R on the cluster
+
+* Open a terminal
+* Connect and log-into cedar
+
+`ssh -Y username@cedar.computecanada.ca`

@@ -1,0 +1,210 @@
+---
+title: "Microbiome data manipulation and visualization in R"
+subtitle: "Notes"
+editor_options:
+  chunk_output_type: console
+author: Kim Dill-McFarland
+date: "version `r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+    toc_depth: 4
+  pdf_document:
+    toc: yes
+    toc_depth: 4
+---
+
+# R on a cluster
+## Set-up
+
+We will be working on cedar (Compute Canada) so please log-in.  
+`ssh -Y username@cedar.computecanada.ca`
+
+R is already installed and you can checkout what versions are on the cluster with the following. *Note that R is listed as lowercase "r" on Compute Canada resources but the actual program name is uppercase "R".*   
+`module spider r`
+
+```
+r:
+----------------------------------------------
+    Description:
+      R is a free software environment for statistical computing and
+      graphics.
+
+     Versions:
+        r/3.3.3
+        r/3.4.0
+        r/3.4.3
+        r/3.5.0
+     Other possible modules matches:
+        admixture  amber  annovar  arcs  armadillo  arpack-ng  arrow  ...
+
+----------------------------------------------
+  To find other possible module matches execute:
+
+      $ module -r spider '.*r.*'
+
+----------------------------------------------
+  For detailed information about a specific "r" module (including how to load the modules) use the module's full name.
+  For example:
+
+     $ module spider r/3.5.0
+----------------------------------------------
+```
+
+We want to use the most recent version of R available (though anything 3.4+ will work). Load the default version with  
+`module load r`
+
+Now that R is loaded, we can run the program in interactive mode by calling the program. Note that R also lists the version and verify that it is 3.4 or newer.  
+`R`
+
+```
+R version 3.5.0 (2018-04-23) -- "Joy in Playing"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+```
+
+## Installing packages
+R itself does not contain all of the functions we would like to use to analyze microbiome data. Many functions are added to R in **packages** that must be installed separately.
+
+We can see what packages are already installed with  
+`installed.packages()`
+
+```
+           Package     
+base       "base"      
+boot       "boot"      
+class      "class"     
+cluster    "cluster"   
+codetools  "codetools" 
+compiler   "compiler"  
+datasets   "datasets"  
+foreign    "foreign"   
+graphics   "graphics"  
+grDevices  "grDevices" 
+grid       "grid"      
+KernSmooth "KernSmooth"
+lattice    "lattice"   
+MASS       "MASS"      
+Matrix     "Matrix"    
+methods    "methods"   
+mgcv       "mgcv"      
+nlme       "nlme"      
+nnet       "nnet"      
+parallel   "parallel"  
+rpart      "rpart"     
+spatial    "spatial"   
+splines    "splines"   
+stats      "stats"     
+stats4     "stats4"    
+survival   "survival"  
+tcltk      "tcltk"     
+tools      "tools"     
+utils      "utils"
+```
+
+It is best practices to install additional packages natively to your account so that you only have those you need and are able to update them as needed.
+
+Let's first exit R and make a directory to hold all our packages.  
+`quit()`
+
+`mkdir ~/R_packages`
+
+We will also load gcc since many R packages are compiled using the Gnu family.  
+`module load gcc`
+
+We then need to install 2 packages to complete our phylogentic tree in R. First, we will install `ape`, which is a CRAN hosted package; any CRAN package can be installed similarly. You can choose any CRAN mirror near you.  
+`R`
+
+`install.packages("ape", lib="~/R_packages")`
+
+This will install `ape` as well as dependencies like `Rcpp`. This can take up to 
+
+8:04
+
+To verify that installation worked, you can load the package in R.  
+`library(ape)`
+
+```
+
+```
+
+Next, we will install `phyloseq`, which is a Bioconductor hosted package; any Bioconductor package can be installed similarly.  
+`source('http://bioconductor.org/biocLite.R')`
+
+`biocLite('phyloseq')`
+
+Again we check that it will load.  
+`library(phyloseq)`
+
+```
+
+```
+
+If we exit R and list within our `R_packages` directory, we can see our successfully installed packages.
+
+`quit()`
+
+`ls ~/R_packages`
+
+```
+
+```
+
+
+Create .sh file
+```
+#!/bin/bash
+#SBATCH --time=00:01:00
+#SBATCH --account=def-shallam
+echo 'Hello, world!'
+sleep 30
+
+```
+Remember that time is as hr:min:sec and account is your username (if you have allocation) or your PIs account if you are working in their specified project.
+
+
+Submit the job  
+`sbatch submit.sh`
+
+See your queue  
+`squeue -u kadm`
+
+See the output  
+`cat slurm-6278459.out`
+
+
+
+
+Move files
+For your computer to Compute Canada
+Terminal on your computer, not logged into CC
+`scp project3_test.gz kadm@cedar.computecanada.ca:~/scratch/project1/`
+From Compute Canada to your computer
+Terminal on your computer, not logged into CC
+`scp kadm@cedar.computecanada.ca:~/scratch/project1/test.txt ./`
+
+```{r eval=FALSE}
+setwd("/home/GLBRCORG/dillmcfarlan")
+library(phyloseq)
+library(ape)
+dist.mat = import_mothur_dist("clean_repFasta.phylip.dist")
+save.image(file="/home/GLBRCORG/dillmcfarlan/dist.RData")
+NJ.tree = bionj(dist.mat)
+save.image(file="/home/GLBRCORG/dillmcfarlan/NJ.tree.RData")
+```
