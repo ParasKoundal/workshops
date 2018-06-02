@@ -10,20 +10,51 @@ output:
     toc: yes
     toc_float:
       collapsed: no
-    toc_depth: 4
   pdf_document:
     toc: yes
-    toc_depth: 4
 ---
+# Introduction
+In this workshop, we will demonstrate how to utilize R on the cluster, including
+
+* loading R
+* installing packages
+* running an Rscript
+* saving Rscript outputs
+
+As well as how to being to explore microbiome data in RStudio on your personal machine with the packages
+
+* tidyverse
+* phyloseq
+
+Data used in this workshop are from an on-going time series in Sannich Inlet, British Columbia, Canada. If you would like a brief introduction to the system, please read [Hallam SJ *et al*. 2017. Sci Data 4: 170158](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5663219/) "Monitoring microbial responses to ocean deoxygenation in a model oxygen minimum zone". You can also check out this [short video](https://drive.google.com/file/d/1s6V263-Vj2KQ6rExOBaYn-UDOERyQVGZ/view?usp=sharing) showing how the sampling was done!
+
+More information on the sequencing data can be found in [Hawley *et al*. 2017. Sci Data 4: 170160 ](https://www.nature.com/articles/sdata2017160) and details on sequence processing for this workshop are given in the [mothur pipeline](https://github.com/EDUCE-UBC/workshops/blob/master/microbiome_summer_school/mothur_pipeline.html) in the workshop materials. Details on the geochemical data are also available in [Torres-Beltrán *et al*. 2017. Sci Data 4: 170159](https://www.nature.com/articles/sdata2017159).
+
+All data and materials for this workshop are available at https://github.com/EDUCE-UBC/workshops/tree/master/microbiome_summer_school.
 
 # R on a cluster
 ## Set-up
 
 We will be working on cedar (Compute Canada) so please log-in.  
-`ssh -Y username@cedar.computecanada.ca`
+```
+ssh -Y username@cedar.computecanada.ca
+```
 
+And create a directory for this workshop in your scratch (working) directory.
+```
+mkdir scratch/microbiome
+```
+
+## Data
+In another terminal, not logged into cedar, copy the `clean_repFasta.phylip.dist` distance matrix from wherever it is downloaded on your computer to `~/scratch/microbiome/` on cedar. 
+```
+scp ~/GitHub/workshops/microbiome_summer_school/data/clean_repFasta.phylip.dist username@cedar.computecanada.ca:~/scratch/microbiome/
+```
+## Running R
 R is already installed and you can checkout what versions are on the cluster with the following. *Note that R is listed as lowercase "r" on Compute Canada resources but the actual program name is uppercase "R".*   
-`module spider r`
+```
+module spider r
+```
 
 ```
 r:
@@ -54,10 +85,19 @@ r:
 ```
 
 We want to use the most recent version of R available (though anything 3.4+ will work). Load the default version with  
-`module load r`
+```
+module load r
+```
 
-Now that R is loaded, we can run the program in interactive mode by calling the program. Note that R also lists the version and verify that it is 3.4 or newer.  
-`R`
+We will also load gcc since many R packages are compiled using the Gnu family.  
+```
+module load gcc
+```
+
+Now that R is loaded, we can run it in interactive mode by calling the program.  
+```
+R
+```
 
 ```
 R version 3.5.0 (2018-04-23) -- "Joy in Playing"
@@ -80,10 +120,12 @@ Type 'q()' to quit R.
 ```
 
 ## Installing packages
-R itself does not contain all of the functions we would like to use to analyze microbiome data. Many functions are added to R in **packages** that must be installed separately.
+R itself does not contain all of the functions we would like to use to analyze microbiome data. Many functions are added to R in packages that must be installed separately.
 
 We can see what packages are already installed with  
-`installed.packages()`
+```
+installed.packages()
+```
 
 ```
            Package     
@@ -118,93 +160,309 @@ tools      "tools"
 utils      "utils"
 ```
 
-It is best practices to install additional packages natively to your account so that you only have those you need and are able to update them as needed.
+It is best practices to install additional packages natively to your account so that you only have those you need and are able to update them as needed. We need to install 2 packages to complete our phylogenetic tree in R. 
 
-Let's first exit R and make a directory to hold all our packages.  
-`quit()`
-
-`mkdir ~/R_packages`
-
-We will also load gcc since many R packages are compiled using the Gnu family.  
-`module load gcc`
-
-We then need to install 2 packages to complete our phylogentic tree in R. First, we will install `ape`, which is a CRAN hosted package; any CRAN package can be installed similarly. You can choose any CRAN mirror near you.  
-`R`
-
-`install.packages("ape", lib="~/R_packages")`
-
-This will install `ape` as well as dependencies like `Rcpp`. This can take up to 
-
-8:04
-
-To verify that installation worked, you can load the package in R.  
-`library(ape)`
-
+### phyloseq
+First, we will install `phyloseq`. Since this is a Bioconductor hosted package, we will source from [Bioconductor](https://www.bioconductor.org/) and install its downloader with  
+```
+source('http://bioconductor.org/biocLite.R')
 ```
 
 ```
+Warning in install.packages("BiocInstaller", repos = a["BioCsoft", "URL"]) :
+  'lib = "/cvmfs/soft.computecanada.ca/easybuild/software/2017/avx2/Compiler/gcc5.4/r/3.5.0/lib64/R/library"' is not writable
+Would you like to use a personal library instead? (yes/No/cancel)
 
-Next, we will install `phyloseq`, which is a Bioconductor hosted package; any Bioconductor package can be installed similarly.  
-`source('http://bioconductor.org/biocLite.R')`
+Would you like to create a personal library
+‘~/R/x86_64-pc-linux-gnu-library/3.5’
+to install packages into? (yes/No/cancel)
+```
 
-`biocLite('phyloseq')`
+Allow R to automatically make a personal library of packages for our account by answering `yes` to both questions.
 
-Again we check that it will load.  
-`library(phyloseq)`
+```
+trying URL 'https://bioconductor.org/packages/3.7/bioc/src/contrib/BiocInstaller_1.30.0.tar.gz'
 
+...
+
+The downloaded source packages are in
+	‘/tmp/Rtmp6ZlssK/downloaded_packages’
+Bioconductor version 3.7 (BiocInstaller 1.30.0), ?biocLite for help
+```
+
+Now, we can use `biocLite` to install the Bioconductor package `phyloseq`. Since we setup a personal library, this new package will automatically be installed there.  
+```
+biocLite("phyloseq")
 ```
 
 ```
+BioC_mirror: https://bioconductor.org
+Using Bioconductor 3.7 (BiocInstaller 1.30.0), R 3.5.0 (2018-04-23).
+Installing package(s) ‘phyloseq’
 
-If we exit R and list within our `R_packages` directory, we can see our successfully installed packages.
+...
 
-`quit()`
+The downloaded source packages are in
+	‘/tmp/RtmpX2p2OV/downloaded_packages’
+installation path not writeable, unable to update packages: MASS, survival
+```
+*This may take up to 15 minutes since phyloseq has a lot of dependencies.* While we wait, we will delve more deeply into the data we will be using in this workshop (see slides).
 
-`ls ~/R_packages`
-
+### ape
+Next, we will install `ape`, which is a CRAN hosted package; any CRAN package can be installed similarly without need to call a source as CRAN is the default. As before, the package will be saved in your personal library.   
+```
+install.packages("ape")
 ```
 
 ```
+Installing package into ‘/home/kadm/R/x86_64-pc-linux-gnu-library/3.5’
+(as ‘lib’ is unspecified)
+--- Please select a CRAN mirror for use in this session ---
+Secure CRAN mirrors 
 
+...
 
-Create .sh file
+The downloaded source packages are in
+	‘/tmp/RtmpX2p2OV/downloaded_packages’
+```
+
+If we exit R and list within our personal library, we can see our successfully installed packages.
+
+```
+quit()
+```
+
+```
+ls ~/R/x86_64-pc-linux-gnu-library/3.5
+```
+
+```
+ade4           colorspace  igraph     permute       rhdf5      vegan
+ape            crayon      IRanges    phyloseq      Rhdf5lib   viridisLite
+assertthat     data.table  iterators  pillar        rlang      XVector
+Biobase        dichromat   jsonlite   pkgconfig     S4Vectors  zlibbioc
+BiocGenerics   digest      labeling   plyr          scales
+BiocInstaller  foreach     lazyeval   R6            stringi
+biomformat     ggplot2     magrittr   RColorBrewer  stringr
+Biostrings     glue        multtest   Rcpp          tibble
+cli            gtable      munsell    reshape2      utf8
+```
+
+## Running an R script
+While you can run R in interactive mode, it is more efficient to create an R script. R scripts are simply text documents listing the functions you would like to run in R and saved under `.R`.
+
+To calculate a neighbor-joining tree of our representative sequences, we will read in the mothur formatted distance matrix with `import_mothur_dist` (phyloseq) and calculate the tree with `bionj` (ape). Then we can save the resulting tree data as `.RData` with `save.image` (base).
+
+Let's create an Rscript; any text editor will do.  
+```
+cd scratch/microbiome/
+
+nano
+```
+
+```
+# Set directory to current project
+setwd("~/scratch/microbiome")
+
+# Load relevant packages
+library(ape)
+library(phyloseq)
+
+# Read in distance matrix
+dist.mat = import_mothur_dist("clean_repFasta.phylip.dist")
+
+# Calculate neighbor-joining tree
+NJtree = bionj(dist.mat)
+
+# Save workspace to an RData object
+save.image(file="NJtree.RData")
+```
+
+As you exit, save the script as `NJtree.R`. Then, you can use `NJtree.R` within a normal bash script.
+
+Create the following in submit.sh
 ```
 #!/bin/bash
-#SBATCH --time=00:01:00
-#SBATCH --account=def-shallam
-echo 'Hello, world!'
-sleep 30
+#SBATCH --account=def-shallam    # replace this with your own account
+#SBATCH --ntasks=5               # number of MPI processes
+#SBATCH --mem-per-cpu=2048M      # memory; default unit is megabytes
+#SBATCH --time=0-00:30           # time (DD-HH:MM)
+
+module load r
+
+mpirun -np 1 R CMD BATCH NJtree.R
+```
+
+Remember that account is your username (if you have allocation) or your PIs account if you are working within their specified project (as is the case in my example).
+
+Finally we submit the job  
+```
+sbatch submit.sh
+```
+
+We can watch it's progress in the queue.
+```
+squeue -u username
+```
+
+Or view the `.Rout` file to see how far along into the Rscript the job it. This is also very helpful in de-bugging scripts as it will end at a failed step if one occurs.
 
 ```
-Remember that time is as hr:min:sec and account is your username (if you have allocation) or your PIs account if you are working in their specified project.
+cat NJtree.Rout
+```
 
+Once the job is complete (~20 min), you can copy the `NJtree.RData` file to your computer or use the one provided with the materials for this workshop.
 
-Submit the job  
-`sbatch submit.sh`
+# RStudio on a personal machine
+While some steps, like calculating trees, need to be performed on the cluster, many microbiome data sets are sufficiently small to run on your own machine once the raw sequences have been processed.
 
-See your queue  
-`squeue -u kadm`
+This is best done using the R GUI RStudio. This interface contains the R console (similar to what you saw on the cluster) as well as additional data, package, and graphics features.
 
-See the output  
-`cat slurm-6278459.out`
-
-
-
-
-Move files
-For your computer to Compute Canada
-Terminal on your computer, not logged into CC
-`scp project3_test.gz kadm@cedar.computecanada.ca:~/scratch/project1/`
-From Compute Canada to your computer
-Terminal on your computer, not logged into CC
-`scp kadm@cedar.computecanada.ca:~/scratch/project1/test.txt ./`
+## Installing packages
+As with the cluster, packages need to be installed on your machine. This is done with similar code to what we used on cedar. However, now we will install the `tidyverse` and `phyloseq`
 
 ```{r eval=FALSE}
-setwd("/home/GLBRCORG/dillmcfarlan")
-library(phyloseq)
-library(ape)
-dist.mat = import_mothur_dist("clean_repFasta.phylip.dist")
-save.image(file="/home/GLBRCORG/dillmcfarlan/dist.RData")
-NJ.tree = bionj(dist.mat)
-save.image(file="/home/GLBRCORG/dillmcfarlan/NJ.tree.RData")
+install.packages("tidyverse")
+
+source('http://bioconductor.org/biocLite.R')
+biocLite("phyloseq")
 ```
+
+We then load the packages into our current R session.
+```{r}
+library(tidyverse)
+library(phyloseq)
+```
+
+## Data
+In order to facilitate our later use of `phyloseq`, we need the following data
+
+* OTU table (`.shared` from mothur)
+* Taxonomy (`.taxonomy` from mothur)
+* Sample metadata (`.txt`)
+* Neighbor joining tree (`.RData` from our calculation on cedar)
+
+Tables can be read in with `read.table`, which is a generic import function from base R. We specify that our tables are tab delimited (`sep`) as well as have column names (`header`) and row names in the first column (`row.names`). *Remember to change to file path to where you have the data downloaded on your machine.*
+```{r}
+OTU = read.table("data/Saanich.final.opti_mcc.unique_list.shared", sep="\t", header=TRUE, row.names=2)
+
+taxonomy = read.table("data/Saanich.final.opti_mcc.unique_list.0.03.cons.taxonomy", sep="\t", header=TRUE, row.names=1)
+
+metadata = read.table("data/Saanich.metadata.txt", sep="\t", header=TRUE, row.names=1)
+```
+
+`.RData` files, on the other hand, are imported with `load`.
+```{r}
+load("data/NJtree.RData")
+```
+
+If we look at the data from mothur (OTU and taxonomy), they are not perfectly setup so we need to manipulate them a little with the tidyverse before we can use `phyloseq`.
+
+## Introduction to the tidyverse
+The [tidyverse](https://www.tidyverse.org/) is actually a group of packages for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+To clean-up our mothur-processed data, we will use
+
+* `select` a subset of variables (columns) from `dplyr` package
+* `separate` separate 1 column into multiple from `tidyr` package
+
+However, there are many more functions like
+
+* `filter` out a subset of observations (rows)
+* `arrange` the observations by sorting a variable in ascending or descending order
+* `mutate` all values of a variable (apply a transformation)
+* `*_join` two data frames into a single data frame
+* etc...
+
+Compared to base R, tidyverse code runs much faster. It is also much more readable because all operations are based on _verbs_ (select, filter, mutate...) rather than base R's more difficult to read indexing system (brackets, parentheses...). 
+
+Each verb works similarly:
+
+- input data frame in the first argument
+- other arguments can refer to variables as if they were local objects
+- output is another data frame
+
+```{}
+verb(data, argument1, argument2...)
+```
+
+### Data cleaning
+Now let's use the tidyverse to clean-up the mothur-formatted tables.
+
+#### OTU table
+We need to
+
+* Remove extra columns "label" and "numOtus"
+
+which is done with `select` and `-` before the variables we would like to remove (as opposed to those we would like to keep, which would not have the `-`).
+
+```{r}
+OTU.clean = select(OTU, -label, -numOtus)
+```
+
+#### Taxonomy table
+We need to
+
+* Remove extra column "Size"
+* Separate taxonomy into 1 column per level
+* Name taxonomy columns by level
+
+In this case, we want to string multiple tidyverse verbs together. We can do so by connecting them with a pipe `%>%`. This takes the output of the first verb and puts it in as the data used by the second verb.
+
+```{r}
+taxonomy.clean = select(taxonomy, -Size) %>% 
+  separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
+```
+
+## Introduction to phyloseq
+Now that we have properly formatted data, we can use it in phyloseq. 
+
+The phyloseq package is specifically designed for the analysis of microbiome data. In particular, follows synteax similar to the tidyverse and is used to
+
+* import data processed in other software (QIIME, mothur, RDP)
+* assess alpha- and beta-diversity
+    + Calculation
+    + Visualization
+    + Multiple testing methods specific to high-throughput amplicon sequencing data
+
+### phyloseq object
+Phyloseq has very specific formatting so we need to use its functions to tell it exactly what sort of data each of our data frames.
+
+Our tree does not need to be formatted as it is already in a format recognized by phyloseq.
+
+```{r}
+OTU.clean.physeq = otu_table(as.matrix(OTU.clean), taxa_are_rows=FALSE)
+
+tax.clean.physeq = tax_table(as.matrix(taxonomy.clean))
+
+metadata.physeq = sample_data(metadata)
+```
+
+Then we merge all the pieces into 1 phyloseq object.
+```{r}
+saanich = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq, NJtree)
+```
+
+```{r}
+saanich
+```
+
+### Taxonomy plots
+phyloseq plots are based on ggplot, which is a tidyverse package.
+
+
+# More resources
+In this workshop, we have gone over just some of the functions and graphics within the tidyverse and phyloseq. Below are some resources for further learning and practice!
+
+* [R cheatsheets](https://www.rstudio.com/resources/cheatsheets/) also available in RStudio under Help > Cheatsheets
+
+* [Introduction to dplyr](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html)
+* [dplyr tutorial](https://rpubs.com/justmarkham/dplyr-tutorial)
+* [dplyr video tutorial](https://www.r-bloggers.com/hands-on-dplyr-tutorial-for-faster-data-manipulation-in-r/)
+* [More functions in dplyr and tidyr](https://rpubs.com/bradleyboehmke/data_wrangling)
+
+* [ggplot tutorial 1](http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html)
+* [ggplot tutorial 2](https://rpubs.com/g_jw/ggplot2_tutorial)
+* [ggplot tutorial 3](http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html#the_1_faq)
+
+* [phyloseq tutorials](https://joey711.github.io/phyloseq/)
