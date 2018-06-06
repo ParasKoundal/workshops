@@ -1,6 +1,6 @@
 ---
 title: "Microbiome data manipulation and visualization in R"
-subtitle: "Introduction"
+subtitle: "WestGrid Summer School"
 editor_options:
   chunk_output_type: console
 author: Kim Dill-McFarland
@@ -53,15 +53,6 @@ output: ioslides_presentation
 <br>
 **Figure 3.** Contour plot of water column oxygen concentrations over multiple years in the time series. Note the recurring pattern of oxygen decline below 100 m depth intervals followed by seasonal renewal events in late Summer into early Fall carrying more oxygenated waters into the Inlet. 
 
-## Microbial questions
-<br>
-<br>
-How do microbial communities change with depth or nutrient availability?
-
-Is there a pattern in microbial communities in response to seasonal changes?
-
-How can this inform our predictions for how ocean microbial communities will change with climate change (*i.e.* reduced oxygen and nitrogen, higher temperatures)?
-
 ## Data in this workshop
 
 * 16S Illumina amplicon sequencing of 7 depths in Saanich Inlet (S3) from August 2012
@@ -74,7 +65,26 @@ How can this inform our predictions for how ocean microbial communities will cha
     + Carbon: CH~4~
     + Other: temperature, salinity
 
-# RStudio
+## Microbial questions
+<br>
+<br>
+How do microbial communities change with depth or nutrient availability?
+
+Is there a pattern in microbial communities in response to seasonal changes?
+
+How can this inform our predictions for how ocean microbial communities will change with climate change (*i.e.* reduced oxygen and nitrogen, higher temperatures)?
+
+## Phylogenetic answers?
+
+* Sequences clustered into 97% operational taxonomic units (OTUs) as a proxy for microbial species
+* Does not fully capture relatedness of "species"
+
+<br>
+<br>
+
+* Phylogenetic approaches compare "species" at the sequence level
+* Such analyses require a phylogenetic tree
+    + This calculation is our current mission on cedar!
 
 ## More workshops
 <div class="columns-2">

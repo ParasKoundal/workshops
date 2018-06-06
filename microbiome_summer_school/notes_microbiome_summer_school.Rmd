@@ -318,6 +318,8 @@ While some steps, like calculating trees, need to be performed on the cluster, m
 
 This is best done using the R GUI RStudio. This interface contains the R console (similar to what you saw on the cluster) as well as additional data, package, and graphics features.
 
+Here, we will begin to explore the Saanich Inlet data using `phyloseq`.
+
 ## Installing packages
 As with the cluster, packages need to be installed on your machine. This is done with similar code to what we used on cedar. However, now we will install the `tidyverse` and `phyloseq`
 
@@ -351,20 +353,20 @@ taxonomy = read.table("data/Saanich.final.opti_mcc.unique_list.0.03.cons.taxonom
 metadata = read.table("data/Saanich.metadata.txt", sep="\t", header=TRUE, row.names=1)
 ```
 
-`.RData` files, on the other hand, are imported with `load`.
+`.RData` files, *i.e. our tree*, are imported with `load`.
 ```{r}
 load("data/NJtree.RData")
 ```
 
-If we look at the data from mothur (OTU and taxonomy), they are not perfectly setup so we need to manipulate them a little with the tidyverse before we can use `phyloseq`.
+If we look at the data from mothur (OTU and taxonomy), they are not perfectly setup so we need to manipulate them a little with the `tidyverse` before we can use `phyloseq`.
 
 ## Introduction to the tidyverse
 The [tidyverse](https://www.tidyverse.org/) is actually a group of packages for data science. All packages share an underlying design philosophy, grammar, and data structures.
 
 To clean-up our mothur-processed data, we will use
 
-* `select` a subset of variables (columns) from `dplyr` package
-* `separate` separate 1 column into multiple from `tidyr` package
+* `select` a subset of variables (columns) (from `dplyr` package)
+* `separate` separate 1 column into multiple (from `tidyr` package)
 
 However, there are many more functions like
 
@@ -387,7 +389,7 @@ verb(data, argument1, argument2...)
 ```
 
 ### Data cleaning
-Now let's use the tidyverse to clean-up the mothur-formatted tables.
+Now let's use the `tidyverse` to clean-up the mothur-formatted tables.
 
 #### OTU table
 We need to
@@ -414,10 +416,12 @@ taxonomy.clean = select(taxonomy, -Size) %>%
   separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
 ```
 
-## Introduction to phyloseq
-Now that we have properly formatted data, we can use it in phyloseq. 
+This begins to show you the utility of the `tidyverse` in data cleaning as you can string together many steps easily and in a relatively readable fashion.
 
-The phyloseq package is specifically designed for the analysis of microbiome data. In particular, follows synteax similar to the tidyverse and is used to
+## Introduction to phyloseq
+Now that we have properly formatted data, we can use it in `phyloseq`. 
+
+The `phyloseq` package is specifically designed for the analysis of microbiome data. In particular, it is used to
 
 * import data processed in other software (QIIME, mothur, RDP)
 * assess alpha- and beta-diversity
@@ -425,10 +429,10 @@ The phyloseq package is specifically designed for the analysis of microbiome dat
     + Visualization
     + Multiple testing methods specific to high-throughput amplicon sequencing data
 
-### phyloseq object
-Phyloseq has very specific formatting so we need to use its functions to tell it exactly what sort of data each of our data frames.
+`phyloseq` also follows a syntax similar to that of the tidyverse, which means it fits quite well in our pipeline! 
 
-Our tree does not need to be formatted as it is already in a format recognized by phyloseq.
+### phyloseq object
+`phyloseq` has very specific formatting so we need to use its functions to tell it exactly what sort of data each of our data frames is. Note that our tree does not need to be formatted as it is already in a format recognized by phyloseq.
 
 ```{r}
 OTU.clean.physeq = otu_table(as.matrix(OTU.clean), taxa_are_rows=FALSE)
@@ -447,9 +451,94 @@ saanich = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq, NJtree)
 saanich
 ```
 
-### Taxonomy plots
-phyloseq plots are based on ggplot, which is a tidyverse package.
+We see that we have out 7 depths with 4,368 OTUs identified and 11 geochemical metadata variables. Note that merging the tables into a `phyloseq` object automatically removed any depths from the metadata that do not have corresponding sequence data.
 
+### Tree plots
+Let's first plot the tree we so painstakingly calculated on the cluster.
+
+`phyloseq` plots mirror the syntax and logic of ggplot from the `tidyverse` in that they both have:
+
+- _aesthetics_: map variables to visual attributes (e.g., position)
+- _geoms_: graphical representation of data (points, lines, etc.)
+- _stats_: statistical transformations to get from data to points in
+the plot(binning, summarizing, smoothing)
+- _scales_: control _how_ to map a variable to an aesthetic
+- _facets_: juxtapose mini-plots of data subsets, split by variable(s)
+- _guides_: axes, legend, etc. reflect the variables and their values
+
+The idea is to independently specify and combine the blocks (with +) to create the plot you want.
+
+We start simply with the `plot_tree` function.
+```{r}
+plot_tree(saanich)
+```
+
+No this is not very informative as it has all 4000+ OTUs and is generally unreadable. The beauty of the `phyloseq` object, however, is that it contains everything - OTUs, taxonomy, metadata, and the tree - so we can easily add a color aesthetic from other data pieces onto the tree.
+
+First, we'll color by domain to see how the tree did at separately out sequences at this high taxonomic level.
+```{r}
+plot_tree(saanich, color="Domain")
+```
+
+As expected, the Archaea cluster together along one branch while the more diverse Bacteria take up the rest of the tree. 
+
+**Try changing the taxonomic level and see how levels like Phylum or Class look!**
+
+You can also learn more about the parameters available for `plot_tree` (or any function) using the help `?` function.
+
+```{r}
+?plot_tree
+```
+
+### Taxonomy plots
+Now let's leverage our data to begin to answer some of our earlier questions like "How do microbial communities change with depth or nutrient availability?"
+
+With `plot_bar`, we can create stacked taxonomy plots to see overall trends in microbial communities.
+```{r}
+plot_bar(saanich, fill="Phylum")
+```
+
+However, we do not have equal numbers of sequences per sample (a common issue). So we can call on another `phyloseq` function, namely `transform_sample_counts`, to convert our raw sequence counts into percent relative abundance. 
+```{r}
+saanich_percent = transform_sample_counts(saanich, function(x) 100 * x/sum(x))
+```
+
+Plotting the transformed data and added a `geom` to pretty up the bars by removing all the blanks lines between individual OTUs, we can start to see how the communities change with depth.
+```{r}
+plot_bar(saanich_percent, fill="Phylum")+ 
+  geom_bar(aes(fill=Phylum), stat="identity")
+```
+
+Again there are many more parameters and options, so checkout `?plot_bar`!
+
+### Correlating metadata
+Finally, we'll delve into a more specific microbial question by sub-setting our data to 1 bacterial genus and looking to see if it correlates with any of our geochemical measurements.
+
+First, we subset the data, still working in `phyloseq`.
+```{r}
+nitrospina = subset_taxa(saanich_percent, Genus=="Nitrospina")
+
+nitrospina
+```
+
+We see that we've cut the data down to just the 8 OTUs classified as *Nitrospina*.
+
+Then, we can plot a heatmap against a variable from our metadata to look for trends. Given *Nitrospina*'s role in the nitrogen cycle, we will explore nitrate (NO~3~).
+
+```{r}
+plot_heatmap(nitrospina, method=NULL, sample.label="NO3_uM", sample.order="NO3_uM")
+```
+
+As expected *Nitrospina* OTUs tend to be more highly abundant when NO~3~ is abundant. 
+
+**Try changing the genus and/or metadata variable to explore other questions!**
+
+# Concluding remarks
+This has been a brief introduction to a number of tools of use in microbiome sequence data analysis and is by no means exhaustive. Hopefully, you've learned enough to begin to explore your own data! 
+
+The best way to learn R is to use it so please use the resources below to continue exploring the `tidyverse` and `phyloseq`. You may also be interested in more extensive R workshops given by [ECOSCOPE](http://ecoscope.ubc.ca/events/).
+
+Happy coding!
 
 # More resources
 In this workshop, we have gone over just some of the functions and graphics within the tidyverse and phyloseq. Below are some resources for further learning and practice!
