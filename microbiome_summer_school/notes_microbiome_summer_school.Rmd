@@ -227,6 +227,7 @@ cd scratch/microbiome/
 nano
 ```
 
+Enter the following into the document.
 ```
 # Set directory to current project
 setwd("~/scratch/microbiome")
@@ -310,7 +311,7 @@ library(phyloseq)
 ```
 
 ## Data
-In order to facilitate our later use of `phyloseq`, we need the following data
+In order to facilitate our later use of `phyloseq`, we need the following data from the workshop [repo](https://github.com/EDUCE-UBC/workshops/tree/master/microbiome_summer_school).
 
 * OTU table (`.shared` from [mothur](https://www.mothur.org/wiki/Main_Page))
 * Taxonomy (`.taxonomy` from [mothur](https://www.mothur.org/wiki/Main_Page))
@@ -446,7 +447,7 @@ We start simply with the `plot_tree` function.
 plot_tree(saanich)
 ```
 
-No this is not very informative as it has all 4000+ OTUs and is generally unreadable. The beauty of the `phyloseq` object, however, is that it contains everything - OTUs, taxonomy, metadata, and the tree - so we can easily add a color aesthetic from other data pieces onto the tree.
+Now this is not very informative as it has all 4000+ OTUs and is generally unreadable. The beauty of the `phyloseq` object, however, is that it contains everything - OTUs, taxonomy, metadata, and the tree - so we can easily add a color aesthetic from other data pieces onto the tree.
 
 First, we'll color by domain to see how the tree did at separating out sequences at this high taxonomic level.
 ```{r}
@@ -455,12 +456,48 @@ plot_tree(saanich, color="Domain")
 
 As expected, the Archaea cluster together along one branch while the more diverse Bacteria take up the rest of the tree. 
 
-**Try changing the taxonomic level and see how levels like Phylum or Class look!**
+However, this is a lot of data to try to visualize. We can subset to a taxon of interest using `subset_taxa` so that we may more easily see results and patterns. Let's look at the Genus *Nitrospina* as it plays an important role in the nitrogen cycle converting nitrite (NO~2~) to nitrate (NO~3~).
 
-You can also learn more about the parameters available for `plot_tree` (or any function) using the help `?` function.
+```{r}
+nitrospina = subset_taxa(saanich, Genus == "Nitrospina")
+```
+
+We see that this has reduced the data set to just the 8 OTUs classified as *Nitrospina*.
+
+```{r}
+nitrospina
+```
+
+Now our tree is quite manageable.
+
+```{r}
+plot_tree(nitrospina, color="Domain")
+```
+
+We can now start to plot more informative metadata onto the tree as color, shape, size, etc. For example, we can color by the sample name to see in which sample(s) each OTU occurs.
+
+```{r}
+plot_tree(nitrospina, color="Sample")
+```
+
+You can learn more about the parameters available for `plot_tree` (or any function) using the help `?` function.
 
 ```{r}
 ?plot_tree
+```
+
+### Exercise 1
+
+1. Change the color in the large (sannich) tree to Phylum taxonomy.
+
+```{r echo=FALSE}
+plot_tree(saanich, color="Phylum")
+```
+
+2. Add "Abundance" data in the form of `size` to the Nitrospina tree.
+
+```{r echo=FALSE}
+plot_tree(nitrospina, color="Sample", size="Abundance")
 ```
 
 ### Taxonomy plots
@@ -478,33 +515,51 @@ saanich_percent = transform_sample_counts(saanich, function(x) 100 * x/sum(x))
 
 Plotting the transformed data and adding a `geom` to pretty up the bars by removing all the lines between individual OTUs, we can start to see how the communities change with depth.
 ```{r}
-plot_bar(saanich_percent, fill="Phylum")+ 
+plot_bar(saanich_percent, fill="Phylum") + 
   geom_bar(aes(fill=Phylum), stat="identity")
 ```
 
 Again there are many more parameters and options, so checkout `?plot_bar`!
 
+### Exercise 2
+
+1. Change the color to Domain level taxnomy in the bar chart. *Hint*: You will need to change something in both geoms.
+
+```{r echo=FALSE}
+plot_bar(saanich_percent, fill="Domain") + 
+  geom_bar(aes(fill=Domain), stat="identity")
+```
+
 ### Correlating metadata
-Finally, we'll delve into a more specific microbial question by sub-setting our data to 1 bacterial genus and looking to see if it correlates with any of our geochemical measurements.
+Finally, we'll delve into a more specific microbial question by sub-setting our data to 1 bacterial genus and looking to see if it correlates with any of our geochemical measurements. This is the same `subset_taxa` function we used with the tree, only now we want to use our percent relative abundance data (`saanich_percent`) to correct for unequal sequence counts across samples.
 
 First, we subset the data, still working in `phyloseq`.
 ```{r}
-nitrospina = subset_taxa(saanich_percent, Genus=="Nitrospina")
+nitrospina_percent = subset_taxa(saanich_percent, Genus=="Nitrospina")
 
-nitrospina
+nitrospina_percent
 ```
-
-We see that we've cut the data down to just the 8 OTUs classified as *Nitrospina*.
 
 Then, we can plot a heatmap against a variable from our metadata to look for trends. Given *Nitrospina*'s role in the nitrogen cycle, we will explore nitrate (NO~3~).
 
 ```{r}
-plot_heatmap(nitrospina, method=NULL, sample.label="NO3_uM", sample.order="NO3_uM")
+plot_heatmap(nitrospina_percent, method=NULL, sample.label="NO3_uM", sample.order="NO3_uM")
 ```
 
-As expected *Nitrospina* OTUs tend to be more highly abundant when NO~3~ is abundant. 
+As expected, *Nitrospina* OTUs tend to be more highly abundant when NO~3~ is abundant, likely due in part to this genus of bacteria creating NO~3~ as part of its metabolism.
 
-**Try changing the genus and/or metadata variable to explore other questions!**
+### Exercise 3
+
+1. Create a heatmap plotting *Nitrospina* against NO~2~.
+
+```{r echo=FALSE}
+plot_heatmap(nitrospina_percent, method=NULL, sample.label="NO2_uM", sample.order="NO2_uM")
+```
+
+2. Choose another genus of interest to you and
+    a. subset `saanich_percent` to your chosen genus
+    b. create a tree of this genus showing its distribution among the samples with shape, color, and/or size.
+    c. create a heatmap ploting the genus abundance against a metadata variable it may be correlated with.
 
 # Concluding remarks
 This has been a brief introduction to a number of tools of use in microbiome sequence data analysis and is by no means exhaustive. Hopefully, you've learned enough to begin to explore your own data! 
