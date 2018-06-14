@@ -1,6 +1,6 @@
 ---
 title: "Microbiome data manipulation and visualization in R"
-subtitle: "Notes"
+subtitle: "WestGrid Summer School Notes"
 editor_options:
   chunk_output_type: console
 author: Kim Dill-McFarland
@@ -21,34 +21,34 @@ In this workshop, we will demonstrate how to utilize R on the cluster, including
 * running an Rscript
 * saving Rscript outputs
 
-As well as how to being to explore microbiome data in RStudio on your personal machine with the packages
+As well as how to begin to explore microbiome data in RStudio on your personal machine with the packages
 
-* tidyverse
-* phyloseq
+- [tidyverse](https://www.tidyverse.org/)
+- [phyloseq](https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html)
 
-Data used in this workshop are from an on-going time series in Sannich Inlet, British Columbia, Canada. If you would like a brief introduction to the system, please read [Hallam SJ *et al*. 2017. Sci Data 4: 170158](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5663219/) "Monitoring microbial responses to ocean deoxygenation in a model oxygen minimum zone". You can also check out this [short video](https://drive.google.com/file/d/1s6V263-Vj2KQ6rExOBaYn-UDOERyQVGZ/view?usp=sharing) showing how the sampling was done!
+Data used in this workshop are from an on-going time series in [Sannich Inlet](http://www.oceannetworks.ca/introduction-saanich-inlet), British Columbia, Canada. If you would like a brief introduction to the system, please read [Hallam SJ *et al*. 2017. Sci Data 4: 170158](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5663219/) "Monitoring microbial responses to ocean deoxygenation in a model oxygen minimum zone". You can also check out this [short video](https://drive.google.com/file/d/1s6V263-Vj2KQ6rExOBaYn-UDOERyQVGZ/view?usp=sharing) showing how the sampling was done!
 
-More information on the sequencing data can be found in [Hawley *et al*. 2017. Sci Data 4: 170160 ](https://www.nature.com/articles/sdata2017160) and details on sequence processing for this workshop are given in the [mothur pipeline](https://github.com/EDUCE-UBC/workshops/blob/master/microbiome_summer_school/mothur_pipeline.html) in the workshop materials. Details on the geochemical data are also available in [Torres-Beltrán *et al*. 2017. Sci Data 4: 170159](https://www.nature.com/articles/sdata2017159).
+More information on the sequencing data can be found in [Hawley *et al*. 2017. Sci Data 4: 170160 ](https://www.nature.com/articles/sdata2017160) and details on sequence processing for this workshop are given in the [mothur pipeline](https://github.com/EDUCE-UBC/workshops/blob/master/microbiome_summer_school/data/mothur_pipeline.html) in the workshop materials. Details on the geochemical data are also available in [Torres-Beltrán *et al*. 2017. Sci Data 4: 170159](https://www.nature.com/articles/sdata2017159).
 
 All data and materials for this workshop are available at https://github.com/EDUCE-UBC/workshops/tree/master/microbiome_summer_school.
 
 # R on a cluster
 ## Set-up
 
-We will be working on cedar (Compute Canada) so please log-in.  
+We will be working on [cedar](https://docs.computecanada.ca/wiki/Cedar) (Compute Canada) so please log-in.  
 ```
 ssh -Y username@cedar.computecanada.ca
 ```
 
 And create a directory for this workshop in your scratch (working) directory.
 ```
-mkdir scratch/microbiome
+mkdir ~/scratch/microbiome
 ```
 
 ## Data
-In another terminal, not logged into cedar, copy the `clean_repFasta.phylip.dist` distance matrix from wherever it is downloaded on your computer to `~/scratch/microbiome/` on cedar. 
+In another terminal, not logged into cedar, copy the `dist.mat.RData` distance matrix from wherever it is downloaded on your computer to `~/scratch/microbiome/` on cedar. 
 ```
-scp ~/GitHub/workshops/microbiome_summer_school/data/clean_repFasta.phylip.dist username@cedar.computecanada.ca:~/scratch/microbiome/
+scp ~/GitHub/workshops/microbiome_summer_school/data/dist.mat.RData username@cedar.computecanada.ca:~/scratch/microbiome/
 ```
 ## Running R
 R is already installed and you can checkout what versions are on the cluster with the following. *Note that R is listed as lowercase "r" on Compute Canada resources but the actual program name is uppercase "R".*   
@@ -160,70 +160,43 @@ tools      "tools"
 utils      "utils"
 ```
 
-It is best practices to install additional packages natively to your account so that you only have those you need and are able to update them as needed. We need to install 2 packages to complete our phylogenetic tree in R. 
+Unless you've previously used R on cedar, these are the basic packages that come with base R and RStudio install.
 
-### phyloseq
-First, we will install `phyloseq`. Since this is a Bioconductor hosted package, we will source from [Bioconductor](https://www.bioconductor.org/) and install its downloader with  
-```
-source('http://bioconductor.org/biocLite.R')
-```
+It is best practices to install additional packages natively to your account so that you are able to add and update them as needed (without needing server admin privileges).
 
-```
-Warning in install.packages("BiocInstaller", repos = a["BioCsoft", "URL"]) :
-  'lib = "/cvmfs/soft.computecanada.ca/easybuild/software/2017/avx2/Compiler/gcc5.4/r/3.5.0/lib64/R/library"' is not writable
-Would you like to use a personal library instead? (yes/No/cancel)
-
-Would you like to create a personal library
-‘~/R/x86_64-pc-linux-gnu-library/3.5’
-to install packages into? (yes/No/cancel)
-```
-
-Allow R to automatically make a personal library of packages for our account by answering `yes` to both questions.
-
-```
-trying URL 'https://bioconductor.org/packages/3.7/bioc/src/contrib/BiocInstaller_1.30.0.tar.gz'
-
-...
-
-The downloaded source packages are in
-	‘/tmp/Rtmp6ZlssK/downloaded_packages’
-Bioconductor version 3.7 (BiocInstaller 1.30.0), ?biocLite for help
-```
-
-Now, we can use `biocLite` to install the Bioconductor package `phyloseq`. Since we setup a personal library, this new package will automatically be installed there.  
-```
-biocLite("phyloseq")
-```
-
-```
-BioC_mirror: https://bioconductor.org
-Using Bioconductor 3.7 (BiocInstaller 1.30.0), R 3.5.0 (2018-04-23).
-Installing package(s) ‘phyloseq’
-
-...
-
-The downloaded source packages are in
-	‘/tmp/RtmpX2p2OV/downloaded_packages’
-installation path not writeable, unable to update packages: MASS, survival
-```
-*This may take up to 15 minutes since phyloseq has a lot of dependencies.* While we wait, we will delve more deeply into the data we will be using in this workshop (see slides).
+We will install 1 package for this workshop. 
 
 ### ape
-Next, we will install `ape`, which is a CRAN hosted package; any CRAN package can be installed similarly without need to call a source as CRAN is the default. As before, the package will be saved in your personal library.   
+The Analysis of Phylogenetics and Evolution package, or `ape`, contains functions related to the calculation, visualization, and analysis of phylogenetic trees. `ape` is a [CRAN](https://cran.r-project.org/) hosted package; any CRAN package can be installed similarly without need to call a specific source as CRAN is the default.
+
 ```
 install.packages("ape")
 ```
 
+Since you cannot write to the packages directory on cedar, R with ask you if you would like to create a personal library for packages.
+
 ```
-Installing package into ‘/home/kadm/R/x86_64-pc-linux-gnu-library/3.5’
-(as ‘lib’ is unspecified)
---- Please select a CRAN mirror for use in this session ---
-Secure CRAN mirrors 
+Warning in install.packages("ape") :
+  'lib = "/cvmfs/soft.computecanada.ca/easybuild/software/2017/avx2/Compiler/gcc5.4/r/3.5.0/lib64/R/library"' is not writable
+Would you like to use a personal library instead? (yes/No/cancel) 
+
+Would you like to create a personal library
+‘~/R/x86_64-pc-linux-gnu-library/3.5’
+to install packages into? (yes/No/cancel) 
+```
+
+Answer `yes` to both questions and then select a CRAN server near your current geographical location.
+
+```
+Selection: 64
+also installing the dependency ‘Rcpp’
+
+trying URL 'https://ftp.osuosl.org/pub/cran/src/contrib/Rcpp_0.12.17.tar.gz'
 
 ...
 
 The downloaded source packages are in
-	‘/tmp/RtmpX2p2OV/downloaded_packages’
+	‘/tmp/RtmpR0jpS9/downloaded_packages’
 ```
 
 If we exit R and list within our personal library, we can see our successfully installed packages.
@@ -237,21 +210,15 @@ ls ~/R/x86_64-pc-linux-gnu-library/3.5
 ```
 
 ```
-ade4           colorspace  igraph     permute       rhdf5      vegan
-ape            crayon      IRanges    phyloseq      Rhdf5lib   viridisLite
-assertthat     data.table  iterators  pillar        rlang      XVector
-Biobase        dichromat   jsonlite   pkgconfig     S4Vectors  zlibbioc
-BiocGenerics   digest      labeling   plyr          scales
-BiocInstaller  foreach     lazyeval   R6            stringi
-biomformat     ggplot2     magrittr   RColorBrewer  stringr
-Biostrings     glue        multtest   Rcpp          tibble
-cli            gtable      munsell    reshape2      utf8
+ape  Rcpp
 ```
+
+You will see that `ape` as well as its dependency package `Rcpp` have been installed.
 
 ## Running an R script
 While you can run R in interactive mode, it is more efficient to create an R script. R scripts are simply text documents listing the functions you would like to run in R and saved under `.R`.
 
-To calculate a neighbor-joining tree of our representative sequences, we will read in the mothur formatted distance matrix with `import_mothur_dist` (phyloseq) and calculate the tree with `bionj` (ape). Then we can save the resulting tree data as `.RData` with `save.image` (base).
+To calculate a neighbor-joining tree of our representative sequences, we will use the `bionj` function from the `ape` package. Then we can save the resulting tree data as `.RData` with `save.image`, which comes as a function in base R.
 
 Let's create an Rscript; any text editor will do.  
 ```
@@ -266,10 +233,9 @@ setwd("~/scratch/microbiome")
 
 # Load relevant packages
 library(ape)
-library(phyloseq)
 
 # Read in distance matrix
-dist.mat = import_mothur_dist("clean_repFasta.phylip.dist")
+load("dist.mat.RData")
 
 # Calculate neighbor-joining tree
 NJtree = bionj(dist.mat)
@@ -280,10 +246,12 @@ save.image(file="NJtree.RData")
 
 As you exit, save the script as `NJtree.R`. Then, you can use `NJtree.R` within a normal bash script.
 
-Create the following in submit.sh
+Next, create the following in a text editor and save as `submit.sh`
+
 ```
 #!/bin/bash
-#SBATCH --account=def-shallam    # replace this with your own account
+#SBATCH --account=wgssubc-wa_cpu    
+#SBATCH --reservation=wgssubc-wr_cpu
 #SBATCH --ntasks=5               # number of MPI processes
 #SBATCH --mem-per-cpu=2048M      # memory; default unit is megabytes
 #SBATCH --time=0-00:30           # time (DD-HH:MM)
@@ -293,7 +261,7 @@ module load r
 mpirun -np 1 R CMD BATCH NJtree.R
 ```
 
-Remember that account is your username (if you have allocation) or your PIs account if you are working within their specified project (as is the case in my example).
+*This account and reservation are specific to this workshop. If you were to run an Rscript job in future, you would use your username (if you have allocation) or your PIs account if you are working within their specified project.*
 
 Finally we submit the job  
 ```
@@ -318,19 +286,24 @@ While some steps, like calculating trees, need to be performed on the cluster, m
 
 This is best done using the R GUI RStudio. This interface contains the R console (similar to what you saw on the cluster) as well as additional data, package, and graphics features.
 
-Here, we will begin to explore the Saanich Inlet data using `phyloseq`.
+Here, we will begin to explore the Saanich Inlet data using the `tidyverse` and `phyloseq` packages.
 
 ## Installing packages
-As with the cluster, packages need to be installed on your machine. This is done with similar code to what we used on cedar. However, now we will install the `tidyverse` and `phyloseq`
+As with the cluster, packages need to be installed on your machine. This is done with similar code to what we used on cedar. However, now we will install `tidyverse` and `phyloseq`, instead of `ape`. The `tidyverse` is on CRAN so it is simply installed like so.
 
 ```{r eval=FALSE}
 install.packages("tidyverse")
+```
 
+In contrast,`phyloseq` is stored on [Bioconductor](https://www.bioconductor.org/) and must be installed by first specifying the source.
+
+```{r eval=FALSE}
 source('http://bioconductor.org/biocLite.R')
+
 biocLite("phyloseq")
 ```
 
-We then load the packages into our current R session.
+We then load the packages into our current R session. *Loading must be done every time you open R/RStudio whereas the install is one time.*
 ```{r}
 library(tidyverse)
 library(phyloseq)
@@ -339,8 +312,8 @@ library(phyloseq)
 ## Data
 In order to facilitate our later use of `phyloseq`, we need the following data
 
-* OTU table (`.shared` from mothur)
-* Taxonomy (`.taxonomy` from mothur)
+* OTU table (`.shared` from [mothur](https://www.mothur.org/wiki/Main_Page))
+* Taxonomy (`.taxonomy` from [mothur](https://www.mothur.org/wiki/Main_Page))
 * Sample metadata (`.txt`)
 * Neighbor joining tree (`.RData` from our calculation on cedar)
 
@@ -475,7 +448,7 @@ plot_tree(saanich)
 
 No this is not very informative as it has all 4000+ OTUs and is generally unreadable. The beauty of the `phyloseq` object, however, is that it contains everything - OTUs, taxonomy, metadata, and the tree - so we can easily add a color aesthetic from other data pieces onto the tree.
 
-First, we'll color by domain to see how the tree did at separately out sequences at this high taxonomic level.
+First, we'll color by domain to see how the tree did at separating out sequences at this high taxonomic level.
 ```{r}
 plot_tree(saanich, color="Domain")
 ```
@@ -503,7 +476,7 @@ However, we do not have equal numbers of sequences per sample (a common issue). 
 saanich_percent = transform_sample_counts(saanich, function(x) 100 * x/sum(x))
 ```
 
-Plotting the transformed data and added a `geom` to pretty up the bars by removing all the blanks lines between individual OTUs, we can start to see how the communities change with depth.
+Plotting the transformed data and adding a `geom` to pretty up the bars by removing all the lines between individual OTUs, we can start to see how the communities change with depth.
 ```{r}
 plot_bar(saanich_percent, fill="Phylum")+ 
   geom_bar(aes(fill=Phylum), stat="identity")
