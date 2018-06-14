@@ -27,8 +27,6 @@ output: ioslides_presentation
     + 28+ [CRAN](https://cran.r-project.org/web/packages/available_packages_by_name.html) package titles contain the word "DNA"
     + Dozens more on [Bioconductor](https://www.bioconductor.org/)
 
-# R on the cluster
-
 ## Data description
 * Part of an on-going oceanographic time series program in Saanich Inlet
 
@@ -85,6 +83,8 @@ How can this inform our predictions for how ocean microbial communities will cha
 * Phylogenetic approaches compare "species" at the sequence level
 * Such analyses require a phylogenetic tree
     + This calculation is our current mission on cedar!
+
+# R on the cluster
 
 ## More workshops
 <div class="columns-2">
