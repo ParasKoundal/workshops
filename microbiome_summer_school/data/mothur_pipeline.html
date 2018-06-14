@@ -226,7 +226,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">mothur pipeline</h1>
 <h4 class="author"><em>Kim Dill-McFarland</em></h4>
-<h4 class="date"><em>version June 01, 2018</em></h4>
+<h4 class="date"><em>version June 13, 2018</em></h4>
 
 </div>
 
@@ -335,7 +335,12 @@ with open(&quot;clean_repFasta.fasta&quot;, 'w') as fasta_out:
 <pre><code>python clean_repFasta_FAST.py Saanich.final.opti_mcc.unique_list.0.03.rep.fasta</code></pre>
 <p>Calculate distances for representative sequences.</p>
 <pre><code>dist.seqs(fasta=clean_repFasta.fasta, output=lt)</code></pre>
-<p>The resulting <code>clean_repFasta.phylip.dist</code> can then be loaded into R for tree calculation.</p>
+<p>The resulting <code>clean_repFasta.phylip.dist</code> can then be loaded into R for tree calculation using the <code>import_mothur_dist</code> function from the <code>phyloseq</code> package.</p>
+<pre><code>library(phyloseq)
+
+dist.mat = import_mothur_dist(&quot;clean_repFasta.phylip.dist&quot;)</code></pre>
+<p>Save the now R-formatted distance matrix for use in the workshop.</p>
+<pre><code>save.image(&quot;dist.mat.RData&quot;)</code></pre>
 </div>
 
 

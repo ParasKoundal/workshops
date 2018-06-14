@@ -185,4 +185,14 @@ Calculate distances for representative sequences.
 dist.seqs(fasta=clean_repFasta.fasta, output=lt)
 ```
 
-The resulting `clean_repFasta.phylip.dist` can then be loaded into R for tree calculation.
+The resulting `clean_repFasta.phylip.dist` can then be loaded into R for tree calculation using the `import_mothur_dist` function from the `phyloseq` package.  
+```
+library(phyloseq)
+
+dist.mat = import_mothur_dist("clean_repFasta.phylip.dist")
+```
+
+Save the now R-formatted distance matrix for use in the workshop.
+```
+save.image("dist.mat.RData")
+```
