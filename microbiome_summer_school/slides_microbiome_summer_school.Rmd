@@ -97,4 +97,6 @@ How can this inform our predictions for how ocean microbial communities will cha
 - **July**: Reproducible research in R and Git
 
 For more info and future workshops, see http://ecoscope.ubc.ca/events/
+
+To contact Kim, email kadm@mail.ubc.ca
 </div>
